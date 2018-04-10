@@ -29,7 +29,7 @@
                 "apt-get update && apt-get --assume-yes dist-upgrade",
                 "wget 'https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/{{user `elastic_version`}}/elasticsearch-{{user `elastic_version`}}.deb' -O '/tmp/elastic.deb'",
                 "dpkg -i /tmp/elastic.deb",
-                "apt-get --assume-yes -f install apt-transport-https datadog-agent htop iftop iotop openjdk-8-jre openjdk-8-jdk",
+                "apt-get --assume-yes -f install apt-transport-https datadog-agent htop iftop iotop openjdk-8-jre openjdk-8-jdk python-boto3 python-requests",
                 "/usr/share/elasticsearch/bin/plugin install cloud-aws",
                 "systemctl enable elasticsearch.service"
             ]
@@ -39,11 +39,19 @@
             "destination": "/tmp/",
             "direction": "upload"
         },{
+            "type": "file",
+            "source": "./scripts",
+            "destination": "/tmp/",
+            "direction": "upload"
+        },{
             "type": "shell",
             "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
             "inline": [
                 "cp -R /tmp/config/datadog/* /etc/datadog-agent/",
-                "cp -R /tmp/config/elasticsearch/2.x/* /etc/elasticsearch/"
+                "cp -R /tmp/config/elasticsearch/2.x/* /etc/elasticsearch/",
+                "chmod +x /tmp/scripts/*",
+                "chown root:root /tmp/scripts/*",
+                "mv /tmp/scripts/* /usr/local/bin/"
             ]
         }
     ]

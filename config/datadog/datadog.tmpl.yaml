@@ -5,7 +5,7 @@ dd_url: https://app.datadoghq.com
 # The Datadog api key to associate your Agent's data with your organization.
 # Can be found here:
 # https://app.datadoghq.com/account/settings
-api_key: 5bbf5a82886d8f14282b5be1ff9b25ca
+api_key: %(api_key)s
 
 # If you need a proxy to connect to the Internet, provide it here (default:
 # disabled). You can use the 'no_proxy' list to specify hosts that should bypass the
@@ -33,8 +33,8 @@ api_key: 5bbf5a82886d8f14282b5be1ff9b25ca
 
 # Set the host's tags (optional)
 tags:
+  - env:%(environment)s
 #   - mytag
-  - env:staging
 #   - role:database
 
 # Histogram and Historate configuration
