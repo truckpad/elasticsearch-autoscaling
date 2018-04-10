@@ -152,6 +152,9 @@ Resources:
       LoadBalancerNames:
         - !Ref LoadBalancer
       Tags: 
+        - Key: "cluster"
+          Value: !Ref ClusterName
+          PropagateAtLaunch: true
         - Key: "Environment"
           Value: !Ref Environment
           PropagateAtLaunch: true

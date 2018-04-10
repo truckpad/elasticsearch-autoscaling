@@ -69,7 +69,7 @@ network.host: 0.0.0.0
 #
 discovery.type: ec2
 discovery.node_cache_time: 30s
-discovery.ec2.tag.cluster: my-application 
+discovery.ec2.tag.ESCluster: my-application 
 #
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
