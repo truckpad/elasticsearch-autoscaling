@@ -1,0 +1,48 @@
+{
+    "variables": {
+        "aws_access_key": "",
+        "aws_secret_key": "",
+        "aws_region": "us-west-2",
+        "aws_source_ami": "ami-4e79ed36",
+        "elastic_version": "2.4.4",
+        "dd_api_key": "5bbf5a82886d8f14282b5be1ff9b25ca"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "access_key": "{{user `aws_access_key`}}",
+            "secret_key": "{{user `aws_secret_key`}}",
+            "region": "{{user `aws_region`}}",
+            "source_ami": "{{user `aws_source_ami`}}",
+            "instance_type": "t2.micro",
+            "ssh_username": "ubuntu",
+            "ami_name": "elastic-autoscaling-{{user `elastic_version`}}-{{timestamp}}"
+        }
+    ],  
+    "provisioners": [
+        {
+            "type": "shell",
+            "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
+            "inline": [
+                "apt-get update && apt-get --assume-yes dist-upgrade",
+                "apt-get --assume-yes install htop iftop iotop openjdk-8-jre openjdk-8-jdk",
+                "wget \"https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/{{user `elastic_version`}}/elasticsearch-{{user `elastic_version`}}.deb\" -O \"/tmp/elastic.deb\"",
+                "dpkg -i /tmp/elastic.deb",
+                "apt-get --assume-yes -f install",
+                "/usr/share/elasticsearch/bin/plugin install cloud-aws",
+                "systemctl enable elasticsearch.service"
+            ]
+        },{
+            "type": "file",
+            "source": "./config",
+            "destination": "/tmp/",
+            "direction": "upload"
+        },{
+            "type": "shell",
+            "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
+            "inline": [
+                "cp -R /tmp/config/2.x/ /etc/elasticsearch"
+            ]
+        }
+    ]
+}

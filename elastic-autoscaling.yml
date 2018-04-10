@@ -1,0 +1,160 @@
+Description: >
+  "Cheap" Elasticsearch Cluster
+
+Parameters:
+
+  ExternalDomain:
+    Description: Domain to listen
+    Type: String
+
+  ClusterName:
+    Description: Cluster name
+    Type: String
+
+  DatadogApiKey:
+    Description: Datadog API Key
+    Type: String
+
+  Environment:
+    Description: Environment
+    Type: String
+    Default: 'homolog'
+
+  VPCId:
+    Description: VPC to deploy this Elasticsearch cluster
+    Type: AWS::EC2::VPC::Id
+
+  Subnets:
+    Description: Subnets to deploy this Elasticsearch cluster
+    Type: List<AWS::EC2::Subnet::Id>
+
+  MinClusterSize:
+    Description: How many Elasticsearch hosts do you want to initially deploy?
+    Type: Number
+    Default: 1
+
+  MaxClusterSize:
+    Description: How many Elasticsearch hosts do you want this cluster to have at most?
+    Type: Number
+    Default: 5
+
+  InstanceType:
+    Description: Instance type to use when Instance Lifecycle is "normal".
+    Type: String
+    Default: t2.nano
+    AllowedValues: [t2.nano, t2.micro, m3.medium, m1.small, m1.medium]
+
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the Elasticsearch cluster
+    Type: AWS::EC2::KeyPair::KeyName
+
+  AMIBaseId:
+    Description: The AWS AMI base to use
+    Type: AWS::EC2::Image::Id
+    Default: ''
+
+Resources:
+
+  InstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+      Path: "/truckpad/db/nosql/"
+      RoleName: !Join [ "-", [ "es", !Ref ClusterName, "role" ] ]
+
+  InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties: 
+      Path: "/truckpad/db/nosql/"
+      Roles:
+        - !Ref InstanceRole
+      InstanceProfileName: !Join [ "-", [ "es", !Ref ClusterName, "profile" ] ]
+
+  SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties: 
+      VpcId: !Ref VPCId
+      GroupName: !Join [ "-", [ "es", !Ref ClusterName ] ]
+      GroupDescription: !Join [ "", ["Elasticsearch ", !Ref ClusterName, " (", !Ref Environment, ")"] ]
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: "0.0.0.0/0"
+        - IpProtocol: "tcp"
+          FromPort: "9200"
+          ToPort: "9200"
+          CidrIp: "0.0.0.0/0" 
+        - IpProtocol: "tcp"
+          FromPort: "9300"
+          ToPort: "9300"
+          CidrIp: "0.0.0.0/0" 
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: "Name"
+          Value: !Join [ "-", [ "es", !Ref ClusterName ] ]
+
+  EC2LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !Ref AMIBaseId
+      InstanceType: !Ref InstanceType
+      SecurityGroups: 
+        - !Ref SecurityGroup
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName
+
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      ConnectionDrainingPolicy:
+        Enabled: true
+        Timeout: 120
+      CrossZone: true
+      LoadBalancerName: !Sub ${AWS::StackName}
+      Listeners:
+        - InstancePort: "9200"
+          InstanceProtocol: "HTTP"
+          LoadBalancerPort: "9200"
+          Protocol: "HTTP"
+      Scheme: "internal"
+      SecurityGroups:
+        - !Ref SecurityGroup
+      Subnets:  !Ref Subnets
+      Tags:
+        - Key: "Environment"
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties: 
+      VPCZoneIdentifier: !Ref Subnets
+      LaunchConfigurationName: !Ref EC2LaunchConfiguration
+      MinSize: !Ref MinClusterSize
+      MaxSize: !Ref MaxClusterSize
+      DesiredCapacity: !Ref MinClusterSize
+      HealthCheckGracePeriod: 600
+      MetricsCollection:
+        - Granularity: 1Minute
+      LoadBalancerNames:
+        - !Ref LoadBalancer
+      Tags: 
+        - Key: "Environment"
+          Value: !Ref Environment
+          PropagateAtLaunch: true
+        - Key: Name
+          Value: !Sub ${AWS::StackName}
+          PropagateAtLaunch: true
