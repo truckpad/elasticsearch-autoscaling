@@ -41,7 +41,7 @@
             "type": "shell",
             "execute_command": "sudo sh -c '{{ .Vars }} {{ .Path }}'",
             "inline": [
-                "cp -R /tmp/config/2.x/ /etc/elasticsearch"
+                "cp -R /tmp/config/2.x/* /etc/elasticsearch/"
             ]
         }
     ]
