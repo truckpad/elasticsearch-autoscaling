@@ -114,6 +114,11 @@ Resources:
         - !Ref SecurityGroup
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !Ref KeyName
+      UserData: 
+        "Fn::Base64": !Sub |
+          #!/bin/bash
+          /usr/local/bin/dd_agent_config.py ${Environment} ${DatadogApiKey}
+          /usr/local/bin/es_cluster_config.py ${ClusterName}
 
   LoadBalancer:
     Type: "AWS::ElasticLoadBalancing::LoadBalancer"
@@ -152,7 +157,7 @@ Resources:
       LoadBalancerNames:
         - !Ref LoadBalancer
       Tags: 
-        - Key: "cluster"
+        - Key: "ESCluster"
           Value: !Ref ClusterName
           PropagateAtLaunch: true
         - Key: "Environment"

@@ -32,11 +32,11 @@ def config_elasticsearch(cluster):
         'region': aws_region()
     }
 
-    before_hash = file_hash(BASE_PATH % 'elasticsearch.yaml')
-    with open(BASE_PATH % 'elasticsearch.tmpl.yaml', 'r') as template:
-        with open(BASE_PATH % 'elasticsearch.yaml', 'w') as config:
+    before_hash = file_hash(BASE_PATH % 'elasticsearch.yml')
+    with open(BASE_PATH % 'elasticsearch.tmpl.yml', 'r') as template:
+        with open(BASE_PATH % 'elasticsearch.yml', 'w') as config:
             config.write(template.read() % params)
-    after_hash = file_hash(BASE_PATH % 'elasticsearch.yaml')
+    after_hash = file_hash(BASE_PATH % 'elasticsearch.yml')
     
     if before_hash != after_hash:
         os.system('/etc/init.d/elasticsearch restart')  
