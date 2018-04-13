@@ -5,8 +5,10 @@ import hashlib
 import os
 import requests
 import sys
+from psutil import virtual_memory
 
-BASE_PATH = '/etc/elasticsearch/%s'
+BASE_ETC_PATH = '/etc/default/%'
+BASE_ES_PATH = '/etc/elasticsearch/%s'
 
 
 def aws_instance_id():
@@ -29,17 +31,24 @@ def file_hash(filename):
 def config_elasticsearch(cluster):
     params =  {
         'cluster': cluster,
-        'region': aws_region()
+        'region': aws_region(),
+        'memory': min([max([2.56e+8, virtual_memory().total/2]), 3.2e+10])
     }
 
-    before_hash = file_hash(BASE_PATH % 'elasticsearch.yml')
-    with open(BASE_PATH % 'elasticsearch.tmpl.yml', 'r') as template:
-        with open(BASE_PATH % 'elasticsearch.yml', 'w') as config:
+    before_hash_etc = file_hash(BASE_ETC_PATH % 'elasticsearch')
+    with open(BASE_ES_PATH % 'default/elasticsearch.tmpl', 'r') as template:
+        with open(BASE_ETC_PATH % 'default/elasticsearch', 'w') as config:
             config.write(template.read() % params)
-    after_hash = file_hash(BASE_PATH % 'elasticsearch.yml')
+    after_hash_etc = file_hash(BASE_ETC_PATH % 'elasticsearch')
+
+    before_hash = file_hash(BASE_ES_PATH % 'elasticsearch.yml')
+    with open(BASE_ES_PATH % 'elasticsearch.tmpl.yml', 'r') as template:
+        with open(BASE_ES_PATH % 'elasticsearch.yml', 'w') as config:
+            config.write(template.read() % params)
+    after_hash = file_hash(BASE_ES_PATH % 'elasticsearch.yml')
     
-    if before_hash != after_hash:
-        os.system('/etc/init.d/elasticsearch restart')  
+    if before_hash_etc != after_hash_etc or before_hash != after_hash:
+        os.system('/etc/init.d/elasticsearch restart')
 
 
 if __name__ == '__main__':
