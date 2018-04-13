@@ -18,8 +18,8 @@
 #PID_DIR=/var/run/elasticsearch
 
 # Heap size defaults to 256m min, 1g max
-# Set ES_HEAP_SIZE to 50% of available RAM, but no more than 31g
-ES_HEAP_SIZE=$(memory)s
+# Set ES_HEAP_SIZE to 50 percent of available RAM, but no more than 31g
+ES_HEAP_SIZE=%(memory)i
 
 # Heap new generation
 #ES_HEAP_NEWSIZE=

@@ -7,7 +7,7 @@ import requests
 import sys
 from psutil import virtual_memory
 
-BASE_ETC_PATH = '/etc/default/%'
+BASE_ETC_PATH = '/etc/default/%s'
 BASE_ES_PATH = '/etc/elasticsearch/%s'
 
 
@@ -37,7 +37,7 @@ def config_elasticsearch(cluster):
 
     before_hash_etc = file_hash(BASE_ETC_PATH % 'elasticsearch')
     with open(BASE_ES_PATH % 'default/elasticsearch.tmpl', 'r') as template:
-        with open(BASE_ETC_PATH % 'default/elasticsearch', 'w') as config:
+        with open(BASE_ETC_PATH % 'elasticsearch', 'w') as config:
             config.write(template.read() % params)
     after_hash_etc = file_hash(BASE_ETC_PATH % 'elasticsearch')
 
